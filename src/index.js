@@ -1,5 +1,7 @@
 const dotenv = require('dotenv');
 const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocs = require('./swagger.json')
 const cors = require('cors');
 const pkg = require('body-parser');
 const routes = require('./routes.js');
@@ -18,9 +20,12 @@ server.use(routes);
 const PORT = process.env.PORT;
 const PASS = process.env.PASS;
 
+server.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
+
 server.get('/', (req, res) => {
     return res.status(200).json({message: 'welcome'})
 });
+
 
 server.listen(PORT, () => {
     console.log(`Server running on: http://localhost:${PORT}`);
