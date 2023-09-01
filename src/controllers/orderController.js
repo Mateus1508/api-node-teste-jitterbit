@@ -12,6 +12,11 @@ class OrderController {
         try {
             const orderData = request.body;
             const createdOrder = await this.orderService.createOrder(orderData);
+
+            if (createdOrder.error) {
+                return response.status(400).json({message: createdOrder.error});
+            }
+
             return response.status(201).json(createdOrder);
         }
         catch (err) {
@@ -50,7 +55,12 @@ class OrderController {
             if (!order) {
                 return response.status(200).json({message: `Order doesn't exists`});
             }
-            return response.status(200).json(order /* {message: `Order ${orderId} updated with success`} */);
+
+            if (order.error) {
+                return response.status(400).json({message: order.error});
+            }
+
+            return response.status(200).json(order);
          }
         catch (err) {
             return response.status(500).json({message: 'Internal server error'});

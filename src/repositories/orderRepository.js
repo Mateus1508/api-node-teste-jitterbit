@@ -34,14 +34,25 @@ class OrderRepository {
             const createdItems = await ItemsModel.create(treatedOrder.items);
             const itemIds = createdItems.map(item => item._id);
             treatedOrder.items = itemIds;
-
+            
+            
             const newOrder = new OrderModel(treatedOrder);
+            
+            if (!createdItems || !newOrder) {
+                const idError = new Error("Bad request.");
+                    idError.status = 400;
+                    throw idError;
+            }
+            
             const createdOrder = await newOrder.save();
             console.log(createdOrder)
             return createdOrder;
         }
         catch (err) {
-            throw err;
+            return {
+                status: err.status || 500, 
+                error: err.message 
+            };
         }
     }
 
@@ -69,13 +80,19 @@ class OrderRepository {
         try {
             const treatedOrder = this.handleTreatValue(orderData)
 
-            orderData.items.forEach(async (item) => {
+            for (const item of orderData.items) {
+                if (!item._id) {
+                    const idError = new Error("Item id not provided.");
+                    idError.status = 400;
+                    throw idError;
+                }
+    
                 await ItemsModel.findOneAndUpdate(
                     { _id: item._id },
                     { $set: item },
                     { new: true }
                 );
-            })
+            }
 
             const updatedOrder = await OrderModel.findOneAndUpdate(
                 { orderId },
@@ -86,7 +103,10 @@ class OrderRepository {
             return updatedOrder;
         }
         catch (err) {
-            throw err;
+            return {
+                status: err.status || 500, 
+                error: err.message 
+            };
         }
     }
 

@@ -12,7 +12,7 @@ class LoginController {
             const userData = request.body;
 
             const user = await this.loginService.signIn(userData);
-            return response.status(200).json(user);
+            return response.status(200).json({accessToken: user});
         }
         catch (err) {
             return response.status(500).json({message: 'Internal server error'});
