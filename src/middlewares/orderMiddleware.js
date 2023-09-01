@@ -1,5 +1,10 @@
+const ItemsModel = require("../models/itemsModel");
+const OrderModel = require("../models/orderModel");
+const OrderRepository = require("../repositories/orderRepository");
+const OrderService = require("../services/orderService");
+
 class OrderMiddleware {
-    validateCreateOrder = async (request, response, next) => {
+    validateCreateOrder = (request, response, next) => {
         const orderData = request.body;
         if (!orderData.orderId) {
             return response.status(400).json({ error: 'OrderId is required.' });
@@ -8,24 +13,26 @@ class OrderMiddleware {
             return response.status(400).json({ error: 'At least one item must be passed!' });
         }
         next();
-        
     }
 
-    validateOrderId = async (request, response, next) => {
-        const { orderId } = request.params; 
+    verifyExistingIds = async (request, response, next) => {
+            const orderData = request.body;
+            const itemData = orderData.items;
 
-        try {
-            const order = await OrderRepository.getByOrderId(orderId);
+            const existingOrder = await OrderModel.findOne({orderId: orderData.orderId});
     
-            if (!order) {
-                return response.status(404).json({ error: 'Order not found.' });
+            if (existingOrder) {
+                return response.status(400).json({ message: 'This orderId already exists.' });
+            }
+    
+            const productIds = itemData.map(item => item.productId);
+            const existingItems = await ItemsModel.find({ productId: { $in: productIds } });
+    
+            if (existingItems.length > 0) {
+                return response.status(400).json({ message: 'Your items must be a unique productId.' });
             }
     
             next();
-        } catch (err) {
-            console.error(err);
-            return response.status(500).json({ error: 'Internal server error.' });
-        }
     }
 }
 

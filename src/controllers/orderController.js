@@ -8,15 +8,14 @@ class OrderController {
         this.orderService = orderService;
     }
 
-    createOrder = async (request, response) => {
+    createOrder = async (request, response) => {     
         try {
             const orderData = request.body;
-
-            const createdOrder = this.orderService.createOrder(orderData);
+            const createdOrder = await this.orderService.createOrder(orderData);
             return response.status(201).json(createdOrder);
         }
         catch (err) {
-
+            return response.status(500).json({message: 'Internal server error'});
         }
     }
 
@@ -26,7 +25,7 @@ class OrderController {
             return response.status(200).json(orders);
         }
         catch (err) {
-
+            return response.status(500).json({message: 'Internal server error'});
         }
     }
 
@@ -37,7 +36,7 @@ class OrderController {
             return response.status(200).json(orders);
         }
         catch (err) {
-
+            return response.status(500).json({message: 'Internal server error'});
         }
     }
 
@@ -45,22 +44,32 @@ class OrderController {
         try {
             const { orderId } = request.params;
             const orderData = request.body;
-            const updatedOrder = await this.orderService.updateOrderByOrderId(orderId, orderData);
-            return response.status(200).json(updatedOrder);
-        }
+            
+            const order = await this.orderService.updateOrderByOrderId(orderId, orderData);
+            
+            if (!order) {
+                return response.status(200).json({message: `Order doesn't exists`});
+            }
+            return response.status(200).json(order /* {message: `Order ${orderId} updated with success`} */);
+         }
         catch (err) {
-
+            return response.status(500).json({message: 'Internal server error'});
         }
     }
 
     deleteOrderByOrderId = async (request, response) => {
         try {
             const { orderId } = request.params;
-            const orders = await this.orderService.deleteOrderByOrderId(orderId);
-            return response.status(200).json(orders);
+            const order = await this.orderService.deleteOrderByOrderId(orderId);
+
+            if (!order) {
+                return response.status(200).json({message: `Order doesn't exists`});
+            }
+
+            return response.status(200).json({message: `Order ${orderId} excluded with success`});
         }
         catch (err) {
-
+            return response.status(500).json({message: 'Internal server error'});
         }
     }
 

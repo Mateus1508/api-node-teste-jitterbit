@@ -15,7 +15,7 @@ class LoginController {
             return response.status(200).json(user);
         }
         catch (err) {
-            throw err;
+            return response.status(500).json({message: 'Internal server error'});
         }
     }
 }

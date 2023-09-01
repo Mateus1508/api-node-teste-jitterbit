@@ -1,25 +1,43 @@
+const ItemsModel = require("../models/itemsModel");
 const OrderModel = require("../models/orderModel");
 
 class OrderRepository {
 
-    handleTreatOrder = (orderData) => {
+    handleCreateDate = (orderData) => {
         if (!orderData.creationDate) {
             orderData.creationDate = new Date();
         }
+        return orderData;
+    }
+
+    handleTreatValue = (orderData) => {
+        orderData.items.forEach(item => {
+            item.price *= item.quantity;
+        });
+        
         if (!orderData.value) {
-            const itemPrices = orderData.items.map(item => item.price);
-            const totalValue = itemPrices.reduce((total, price) => total + price, 0);
-            orderData.value = totalValue;
+            orderData.value = 0;
         }
+        
+        const itemPrices = orderData.items.map(item => item.price);
+        const totalValue = itemPrices.reduce((total, price) => total + price, 0);
+/*         console.log(orderData)
+ */        orderData.value = totalValue;
         return orderData;
     }
     
     createOrder = async (orderData) => {
         try {
+            const createdDateOrder = this.handleCreateDate(orderData);
+            const treatedOrder = this.handleCreateDate(createdDateOrder);
 
-            const treatedOrder = this.handleTreatOrder(orderData);
+            const createdItems = await ItemsModel.create(treatedOrder.items);
+            const itemIds = createdItems.map(item => item._id);
+            treatedOrder.items = itemIds;
+
             const newOrder = new OrderModel(treatedOrder);
             const createdOrder = await newOrder.save();
+            console.log(createdOrder)
             return createdOrder;
         }
         catch (err) {
@@ -29,7 +47,7 @@ class OrderRepository {
 
     getAll = async () => {
         try {
-            const order = await OrderModel.find().populate('item').exec();
+            const order = await OrderModel.find().populate('items').exec();
             return order;
         }
         catch (err) {
@@ -39,7 +57,7 @@ class OrderRepository {
 
     getByOrderId = async (orderId) => {
         try {
-            const order = await OrderModel.findOne({ orderId });
+            const order = await OrderModel.findOne({ orderId }).populate('items').exec();
             return order;
         }
         catch (err) {
@@ -49,11 +67,22 @@ class OrderRepository {
 
     updateOrderByOrderId = async (orderId, orderData) => {
         try {
+            const treatedOrder = this.handleTreatValue(orderData)
+
+            orderData.items.forEach(async (item) => {
+                await ItemsModel.findOneAndUpdate(
+                    { _id: item._id },
+                    { $set: item },
+                    { new: true }
+                );
+            })
+
             const updatedOrder = await OrderModel.findOneAndUpdate(
                 { orderId },
-                { $set: orderData },
+                { $set: treatedOrder },
                 { new: true }
-            );
+                );
+            await updatedOrder.save();
             return updatedOrder;
         }
         catch (err) {

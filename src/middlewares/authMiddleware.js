@@ -1,20 +1,25 @@
 const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+dotenv.config();
+
+const TOKEN_SECRET_KEY = process.env.TOKEN_SECRET_KEY;
 
 class AuthMiddleaware {
- verifyToken(req, res, next) {
-    const token = req.header('Authorization');
-
-    if (!token) {
-        return res.status(401).json({ message: 'Token not provided.' });
-    }
-
-    jwt.verify(token, secretKey, (err, decoded) => {
-        if (err) {
-            return res.status(403).json({ message: 'Token invalid.' });
+    verifyToken = (request, response, next) => {
+        const authToken = request.headers.authorization;
+    
+        if (authToken) {
+            const [, token] = authToken.split(' ');
+    
+            try {
+                jwt.verify(token, TOKEN_SECRET_KEY);
+                return next();
+            }
+            catch (err) {
+                return response.status(401).json({ messages: `Token doesn't exist or is expired` });
+            }
         }
-        req.user = decoded;
-        next();
-    });
-}
+        return response.status(401).json({ messages: `User don't authorized!` });
+    };
 }
 module.exports = AuthMiddleaware;

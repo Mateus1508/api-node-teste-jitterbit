@@ -6,12 +6,13 @@ const LoginMiddleware = require('./middlewares/loginMiddleware');
 const AuthMiddleaware = require('./middlewares/authMiddleware');
 const routes = express.Router();
 
-const loginController = new LoginController();
-const orderController = new OrderController();
-
 const loginMiddleware = new LoginMiddleware();
 const orderMiddleware = new OrderMiddleware();
 const authMiddleaware = new AuthMiddleaware();
+
+const loginController = new LoginController();
+const orderController = new OrderController();
+
 
 routes.post(
     '/signin', 
@@ -28,27 +29,25 @@ routes.get(
 routes.post(
     '/order', 
     authMiddleaware.verifyToken,
+    orderMiddleware.verifyExistingIds,
     orderController.createOrder,
 );
 
 routes.get(
     '/order/:orderId', 
     authMiddleaware.verifyToken,
-    orderMiddleware.validateOrderId, 
     orderController.getByOrderId
 );
 
 routes.put(
     '/order/:orderId', 
     authMiddleaware.verifyToken,
-    orderMiddleware.validateOrderId, 
     orderController.updateOrderByOrderId
 );
 
 routes.delete(
     '/order/:orderId', 
     authMiddleaware.verifyToken,
-    orderMiddleware.validateOrderId, 
     orderController.deleteOrderByOrderId
 );
 
